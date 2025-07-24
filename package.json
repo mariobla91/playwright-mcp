@@ -29,7 +29,8 @@
     "wtest": "playwright test --project=webkit",
     "run-server": "node lib/browserServer.js",
     "clean": "rm -rf lib extension/lib",
-    "npm-publish": "npm run clean && npm run build && npm run test && npm publish"
+    "npm-publish": "npm run clean && npm run build && npm run test && npm publish",
+    "postinstall": "if [ \"$AZURE_ENV\" = \"true\" ]; then PLAYWRIGHT_BROWSERS_PATH=/home/site/wwwroot/.playwright/ms-playwright npx playwright install --with-deps chromium; else echo 'Skipping Playwright install on local environment'; fi"
   },
   "exports": {
     "./package.json": "./package.json",
