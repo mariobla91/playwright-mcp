@@ -59,7 +59,8 @@ RUN chown -R ${USERNAME}:${USERNAME} node_modules
 USER ${USERNAME}
 
 COPY --from=browser --chown=${USERNAME}:${USERNAME} ${PLAYWRIGHT_BROWSERS_PATH} ${PLAYWRIGHT_BROWSERS_PATH}
-COPY --chown=${USERNAME}:${USERNAME} cli.js package.json ./
+COPY --chown=${USERNAME}:${USERNAME} cli.js package.json playwright-mcp-config.json stealth-init.js ./
 
-# Run in headless and only with chromium (other browsers need more dependencies not included in this image)
-ENTRYPOINT ["node", "cli.js", "--headless", "--browser", "chromium", "--no-sandbox"]
+# Run with config file (headless chromium with stealth settings)
+# Config file controls browser settings to bypass WAF bot detection
+ENTRYPOINT ["node", "cli.js", "--config", "playwright-mcp-config.json", "--browser", "chromium", "--no-sandbox", "--isolated"]
