@@ -63,4 +63,4 @@ COPY --chown=${USERNAME}:${USERNAME} cli.js package.json playwright-mcp-config.j
 
 # Run with config file (headless chromium with stealth settings)
 # Config file controls browser settings to bypass WAF bot detection
-ENTRYPOINT ["node", "cli.js", "--config", "playwright-mcp-config.json", "--browser", "chromium", "--no-sandbox", "--isolated"]
+ENTRYPOINT ["node", "cli.js", "--config", "playwright-mcp-config.json", "--browser", "chromium", "--no-sandbox", "--isolated", "--port", "8931", "--host", "0.0.0.0", "--allowed-hosts", "*"]
