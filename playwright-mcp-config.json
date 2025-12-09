@@ -5,7 +5,6 @@
     "initScript": ["./stealth-init.js"],
     "launchOptions": {
       "headless": true,
-      "channel": "chrome",
       "args": [
         "--disable-blink-features=AutomationControlled",
         "--disable-dev-shm-usage",
