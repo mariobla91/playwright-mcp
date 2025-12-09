@@ -1,4 +1,5 @@
 {
+  "sharedBrowserContext": true,
   "browser": {
     "browserName": "chromium",
     "isolated": false,
