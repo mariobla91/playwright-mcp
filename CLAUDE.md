@@ -93,7 +93,7 @@ The Dockerfile uses a multi-stage build:
 
 Key Docker configuration:
 - Runs as non-root user `node`
-- Hardcoded to `--headless --browser chromium --no-sandbox --isolated`
+- Hardcoded to `--headless --browser chromium --no-sandbox` (with stealth config loaded via `--config playwright-mcp-config.json`)
 - Output directory: `/tmp/playwright-output`
 - Browser path: `/ms-playwright`
 
@@ -195,11 +195,14 @@ MCP server configuration is defined in `config.d.ts` (TypeScript types) and supp
 - **Capabilities**: `core`, `vision`, `pdf`, `tabs`, `install`, `tracing`, `testing`
 - **Network filtering**: `allowedOrigins`, `blockedOrigins`
 - **Initialization scripts**: `initScript[]`
+- **Session management**: `sharedBrowserContext` - Reuses browser context across clients
 
 Config can be provided via:
 1. CLI arguments (e.g., `--browser=firefox`)
 2. JSON config file via `--config=path/to/config.json`
 3. Programmatic API via `createConnection({ ... })`
+
+**Default production config**: The `playwright-mcp-config.json` file contains the default configuration with stealth settings for WAF bypass and session persistence. **Future configuration rules should be added to `playwright-mcp-config.json`** rather than hardcoding in Dockerfile or CLI defaults, allowing easier updates and flexibility across deployments.
 
 ## Contributing Guidelines
 
@@ -251,8 +254,7 @@ node cli.js --headless --browser chromium --no-sandbox --port 8931 --host 0.0.0.
 **Important Azure considerations:**
 - Use `--host 0.0.0.0` to bind to all interfaces (default `localhost` won't accept external connections)
 - Always use `--headless` and `--no-sandbox` in containerized environments
-- Consider `--isolated` for security (each session gets fresh profile)
-- Use `--shared-browser-context` if you want to reuse browser state across clients
+- Use `--shared-browser-context` to reuse browser state across clients (enabled in default config)
 - Configure Azure networking (VNet, NSG) to restrict access to authorized services only
 - Set resource limits appropriately (Chromium can be memory-intensive)
 - Use Azure Monitor for logging and diagnostics
@@ -273,17 +275,17 @@ Use the included `playwright-mcp-config.json` configuration file that makes the 
 
 ```json
 {
+  "sharedBrowserContext": true,
   "browser": {
     "browserName": "chromium",
     "isolated": false,
-    "userDataDir": "/app/mcp-profile",
     "launchOptions": {
       "headless": true,
       "channel": "chrome",
       "args": ["--disable-blink-features=AutomationControlled"]
     },
     "contextOptions": {
-      "viewport": { "width": 1920, "height": 1080 },
+      "viewport": { "width": 1280, "height": 720 },
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
       "locale": "en-US",
       "timezoneId": "Europe/Oslo",
@@ -297,13 +299,14 @@ Use the included `playwright-mcp-config.json` configuration file that makes the 
 ```
 
 **Key anti-detection features:**
+- `sharedBrowserContext` - Reuses browser context across clients for session persistence
 - `--disable-blink-features=AutomationControlled` - Hides `navigator.webdriver` flag
 - Custom `userAgent` - Matches real Chrome browser (not "HeadlessChrome")
 - `locale` + `timezoneId` - Adds legitimate browser locale signals
 - `extraHTTPHeaders` - Adds Accept-Language header like real browsers
-- `viewport` - Standard desktop resolution (1920x1080)
+- `viewport` - Standard desktop resolution (1280x720)
 - `permissions` - Grants typical browser permissions
-- `userDataDir` with `isolated: false` - Persists cookies/sessions between requests
+- `isolated: false` - Persists cookies/sessions between requests
 
 **Deployment configuration:**
 
