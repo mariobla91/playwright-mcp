@@ -1,8 +1,8 @@
 {
-  "sharedBrowserContext": true,
+  "sharedBrowserContext": false,
   "browser": {
     "browserName": "chromium",
-    "isolated": false,
+    "isolated": true,
     "initScript": ["./stealth-init.js"],
     "launchOptions": {
       "headless": true,

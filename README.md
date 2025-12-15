@@ -446,6 +446,24 @@ state [here](https://playwright.dev/docs/auth).
 }
 ```
 
+**E2E Testing with Session Isolation (HTTP Mode)**
+
+When running Playwright MCP in HTTP mode with Docker, you can ensure clean state for E2E tests:
+
+```bash
+# Docker configuration for E2E testing with clean login state
+docker run -d --rm --init -p 8931:8931 playwright-mcp:latest
+```
+
+With the default configuration (`--isolated` + `sharedBrowserContext: false`):
+- ✅ Each HTTP client gets its own isolated browser context
+- ✅ Temporary profiles deleted when browser closes
+- ✅ Login state does NOT persist between test runs
+- ✅ Perfect for E2E tests requiring fresh login each time
+- ✅ WAF bypass features still active (stealth user-agent, headers, etc.)
+
+This is ideal for test scenarios where you need to verify login flows work correctly and don't have unwanted session persistence.
+
 **Browser Extension**
 
 The Playwright MCP Chrome Extension allows you to connect to existing browser tabs and leverage your logged-in sessions and browser state. See [extension/README.md](extension/README.md) for installation and setup instructions.

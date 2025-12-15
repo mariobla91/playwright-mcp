@@ -226,18 +226,40 @@ docker run --rm getuploadedcr.azurecr.io/playwright/mcp:3.0.0 cat playwright-mcp
 
 ## Session Persistence vs Isolated Mode
 
-### Current: Isolated Mode (`--isolated`)
-- **Pros**: More secure, no profile corruption
-- **Cons**: Cannot persist login sessions/cookies
-- **Use case**: Each request appears as new visitor
+### Current: Isolated Mode with Session Separation (`--isolated` + `sharedBrowserContext: false`)
 
-### Alternative: Persistent Profile
+**Default Configuration** (Recommended for E2E Testing):
 
-To persist sessions for repeated visits:
+```json
+{
+  "sharedBrowserContext": false,
+  "browser": {
+    "isolated": true,
+    "launchOptions": { ... stealth settings ... }
+  }
+}
+```
+
+ENTRYPOINT: `node cli.js --config playwright-mcp-config.json --browser chromium --no-sandbox --isolated --port 8931 --host 0.0.0.0`
+
+**Behavior**:
+- ✅ Each HTTP client gets isolated browser context
+- ✅ Temporary profiles created per session, deleted when browser closes
+- ✅ No session/cookie persistence between clients
+- ✅ Perfect for E2E tests requiring clean login state each run
+- ✅ All WAF bypass features remain active (stealth user-agent, headers, etc.)
+- ✅ More secure, no profile corruption
+
+**Use case**: E2E testing where clean state is critical for login/authentication flows
+
+### Alternative: Persistent Profile (Production Sessions)
+
+To persist sessions across container restarts for production use:
 
 1. **Modify `playwright-mcp-config.json`**:
    ```json
    {
+     "sharedBrowserContext": true,
      "browser": {
        "isolated": false,
        "userDataDir": "/app/mcp-profile"
@@ -250,17 +272,22 @@ To persist sessions for repeated visits:
    RUN mkdir -p /app/mcp-profile && chown ${USERNAME}:${USERNAME} /app/mcp-profile
    ```
 
-3. **Remove `--isolated` from ENTRYPOINT** (line 66):
+3. **Remove `--isolated` from ENTRYPOINT** (line 67):
    ```dockerfile
-   ENTRYPOINT ["node", "cli.js", "--config", "playwright-mcp-config.json", "--no-sandbox"]
+   ENTRYPOINT ["node", "cli.js", "--config", "playwright-mcp-config.json", "--browser", "chromium", "--no-sandbox", "--port", "8931", "--host", "0.0.0.0"]
    ```
 
 4. **Mount volume for persistence**:
    ```bash
    docker run -i --rm --init \
      -v $(pwd)/profile:/app/mcp-profile \
-     getuploadedcr.azurecr.io/playwright/mcp:3.0.0
+     playwright-mcp-dev:latest
    ```
+
+**Trade-offs**:
+- ✅ Sessions persist between container restarts
+- ❌ All clients share same browser context (sessions bleed between requests)
+- ❌ Not suitable for E2E tests requiring isolation
 
 ## Troubleshooting WAF Blocks
 
